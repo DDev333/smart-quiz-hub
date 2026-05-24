@@ -5,11 +5,8 @@ import { quizService } from './api/quizService';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
-  
-  // Data is now fetched from the database, not hardcoded
   const [questions, setQuestions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
@@ -17,7 +14,6 @@ export default function AdminDashboard() {
   const [selectedQ, setSelectedQ] = useState(null);
   const [selectedReviewer, setSelectedReviewer] = useState('');
 
-  // 1. Fetch from Database on Component Mount
   useEffect(() => {
     const fetchData = async () => {
       const data = await quizService.getAllQuestions();
@@ -36,25 +32,15 @@ export default function AdminDashboard() {
     setSelectedQ(q);
     setSelectedReviewer('');
     setIsPanelOpen(true);
-    setTimeout(() => {
-      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-    }, 100);
   };
 
-  // 2. NEW: Database Update Logic
   const handleAssign = async () => {
     if (!selectedReviewer) return;
-    
-    // Step A: Update the actual Database
     await quizService.assignReviewer(selectedQ.id, selectedReviewer);
-
-    // Step B: Update the local UI state so the change is instantly visible
     setQuestions(questions.map(q => 
       q.id === selectedQ.id ? { ...q, status: "Under Review", reviewerId: selectedReviewer } : q
     ));
-    
     setIsPanelOpen(false);
-    alert(`Success! Assigned to ${selectedReviewer}. Status is now "Under Review".`);
   };
 
   const eligibleReviewers = selectedQ 
@@ -62,109 +48,144 @@ export default function AdminDashboard() {
     : [];
 
   const getBadge = (status) => {
-    const s = { 'Draft': 'bg-gray-100 text-gray-700', 'Ready for Review': 'bg-blue-50 text-blue-700', 'Under Review': 'bg-amber-50 text-amber-700', 'Approved': 'bg-emerald-50 text-emerald-700', 'Rejected': 'bg-red-50 text-red-700' }[status] || 'bg-gray-100 text-gray-700';
-    return <span className={`px-2.5 py-1 text-xs font-semibold rounded-full border border-gray-200 ${s}`}>{status}</span>;
+    const styles = { 
+      'Draft': 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border-zinc-300 dark:border-zinc-600', 
+      'Ready for Review': 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800', 
+      'Under Review': 'bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-800', 
+      'Approved': 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800', 
+      'Rejected': 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800' 
+    }[status] || 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300';
+    
+    const dotColor = { 'Draft': 'bg-zinc-400', 'Ready for Review': 'bg-blue-500', 'Under Review': 'bg-orange-500 animate-pulse', 'Approved': 'bg-emerald-500', 'Rejected': 'bg-red-600' }[status] || 'bg-zinc-400';
+
+    return (
+      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest border transition-colors ${styles}`}>
+        <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`}></span>{status}
+      </span>
+    );
   };
 
-  if (isLoading) return <div className="text-center p-10 font-bold text-gray-500">Loading Master Question Bank...</div>;
+  if (isLoading) return (
+    <div className="flex flex-col items-center justify-center h-64 space-y-4">
+      <div className="w-12 h-12 border-4 border-zinc-200 dark:border-zinc-800 border-t-red-600 dark:border-t-red-500 rounded-full animate-spin"></div>
+      <p className="font-black text-zinc-500 animate-pulse uppercase tracking-[0.2em] text-xs">Loading Master Grid...</p>
+    </div>
+  );
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col">
-      <div className="px-6 py-5 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+    <div className="space-y-8 max-w-7xl mx-auto pb-10">
+      <div className="flex justify-between items-end mb-2">
         <div>
-          <h2 className="text-lg font-bold text-gray-800">Master Question Bank</h2>
-          <p className="text-sm text-gray-500">Global view of all questions across the enterprise.</p>
+          <h2 className="text-3xl font-black text-zinc-900 dark:text-white tracking-tighter uppercase italic">Race Control <span className="text-red-600">Grid</span></h2>
+          <p className="text-zinc-500 dark:text-zinc-400 font-bold uppercase tracking-widest text-xs mt-1">Global view and assignment controls across the paddock.</p>
         </div>
-        <div className="text-sm font-bold text-gray-500 bg-white border border-gray-200 px-3 py-1 rounded-md shadow-sm">
-          Total Records: {questions.length}
+        <div className="text-xs font-black uppercase tracking-widest text-zinc-500 dark:text-zinc-400 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 px-4 py-2 shadow-sm">
+          Total Logs: <span className="text-red-600 dark:text-red-500">{questions.length}</span>
         </div>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse min-w-[800px]">
-          <thead>
-            <tr className="bg-white border-b border-gray-200 text-xs uppercase tracking-wider text-gray-500">
-              <th className="px-6 py-4 font-semibold">Question Stem</th>
-              <th className="px-6 py-4 font-semibold">Creator</th>
-              <th className="px-6 py-4 font-semibold">Stack</th>
-              <th className="px-6 py-4 font-semibold">Status</th>
-              <th className="px-6 py-4 font-semibold text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {currentQuestions.map((q) => (
-              <tr 
-                key={q.id} 
-                className={`transition-colors ${selectedQ?.id === q.id && isPanelOpen ? 'bg-purple-50' : 'hover:bg-gray-50'}`}
-              >
-                <td className="px-6 py-4 text-sm font-medium text-gray-900 truncate max-w-[250px]">{q.stem}</td>
-                <td className="px-6 py-4 text-sm"><span className="font-mono font-medium text-indigo-600 bg-indigo-50 px-2 py-1 rounded border border-indigo-100">{q.creatorId}</span></td>
-                <td className="px-6 py-4 text-sm"><span className="px-2 py-1 bg-purple-50 text-purple-700 rounded text-xs border border-purple-100">{q.stack}</span></td>
-                <td className="px-6 py-4 whitespace-nowrap">{getBadge(q.status)}</td>
-                <td className="px-6 py-4 text-right space-x-2 whitespace-nowrap">
-                  <button onClick={() => navigate(`/edit-question/${q.id}`)} className="text-sm px-3 py-1.5 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100 font-medium transition-colors">Edit</button>
-                  {q.status === 'Ready for Review' && (
-                    <button onClick={() => handleOpenAssign(q)} className="text-sm px-3 py-1.5 bg-[#A855F7] text-white rounded-md font-bold hover:bg-purple-600 transition-colors shadow-sm">Assign</button>
-                  )}
-                </td>
+      <div className="bg-white dark:bg-zinc-900 shadow-xl border border-zinc-200 dark:border-zinc-800 flex flex-col transition-all">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse min-w-[1000px]">
+            <thead>
+              <tr className="bg-zinc-50 dark:bg-zinc-950 border-b-2 border-zinc-200 dark:border-zinc-800 text-[10px] uppercase tracking-[0.15em] text-zinc-500 dark:text-zinc-400 font-black">
+                <th className="px-6 py-5">Question Stem</th>
+                <th className="px-6 py-5">Driver (Creator)</th>
+                <th className="px-6 py-5">Chassis (Stack)</th>
+                <th className="px-6 py-5">Aero (Topic)</th>
+                <th className="px-6 py-5">Difficulty</th>
+                <th className="px-6 py-5">Telemetry Status</th>
+                <th className="px-6 py-5 text-right">Pit Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/50">
+              {currentQuestions.map((q) => (
+                <tr key={q.id} className={`transition-all duration-200 ${selectedQ?.id === q.id && isPanelOpen ? 'bg-red-50/50 dark:bg-red-900/10' : 'hover:bg-zinc-50/60 dark:hover:bg-zinc-800/30'}`}>
+                  <td className="px-6 py-5 text-sm font-bold text-zinc-900 dark:text-zinc-100 truncate max-w-[200px]">{q.stem}</td>
+                  <td className="px-6 py-5 text-sm"><span className="font-mono font-bold text-zinc-700 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 border border-zinc-300 dark:border-zinc-700 text-xs uppercase">{q.creatorId}</span></td>
+                  <td className="px-6 py-5 text-sm">
+                    <span className="px-3 py-1 bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 text-xs font-black border border-zinc-200 dark:border-zinc-700 whitespace-nowrap uppercase tracking-wider">
+                      {q.stack || 'N/A'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-5 text-sm">
+                    <span className="text-xs text-zinc-600 dark:text-zinc-400 font-bold uppercase tracking-wider line-clamp-2">
+                      {q.topic || 'General'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-5 text-sm">
+                    <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 border ${
+                        q.difficulty === 'Hard' ? 'text-red-600 bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800' : 
+                        q.difficulty === 'Medium' ? 'text-orange-600 bg-orange-50 border-orange-200 dark:bg-orange-900/20 dark:border-orange-800' : 
+                        'text-emerald-600 bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800'}`}>
+                        {q.difficulty || 'Medium'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-5 whitespace-nowrap">
+                    <div className="flex flex-col items-start gap-2">
+                      {getBadge(q.status)}
+                      {q.reviewerId && (q.status === 'Under Review' || q.status === 'Approved' || q.status === 'Rejected') && (
+                        <span className="text-[9px] text-zinc-500 dark:text-zinc-400 font-black uppercase tracking-widest flex items-center gap-1.5 bg-zinc-50 dark:bg-zinc-800 px-2 py-1 border border-zinc-200 dark:border-zinc-700">
+                          <span className="text-red-500">🏎️</span> {q.reviewerId}
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-6 py-5 text-right space-x-3 whitespace-nowrap">
+                    <button onClick={() => navigate(`/edit-question/${q.id}`)} className="text-xs px-4 py-2 border border-zinc-300 dark:border-zinc-600 text-zinc-800 dark:text-zinc-200 bg-white dark:bg-zinc-800 hover:border-red-500 hover:text-red-600 dark:hover:text-red-400 font-black uppercase tracking-widest transition-all active:scale-95 skew-x-[-5deg]"><span className="skew-x-[5deg]">Edit</span></button>
+                    {q.status === 'Ready for Review' && (
+                      <button onClick={() => handleOpenAssign(q)} className="text-xs px-4 py-2 bg-gradient-to-r from-red-600 to-red-800 text-white font-black uppercase tracking-widest hover:shadow-[0_4px_15px_rgba(220,38,38,0.4)] transition-all active:scale-95 skew-x-[-5deg]"><span className="skew-x-[5deg]">Assign 📡</span></button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
-      <div className="px-6 py-4 bg-gray-50 flex items-center justify-between">
-        <span className="text-sm text-gray-500">
-          Showing <span className="font-medium">{indexOfFirstItem + 1}</span> to <span className="font-medium">{Math.min(indexOfLastItem, questions.length)}</span> of <span className="font-medium">{questions.length}</span> results
-        </span>
-        <div className="flex gap-2">
-          <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="px-3 py-1.5 border border-gray-300 rounded bg-white text-sm disabled:opacity-50 font-medium hover:bg-gray-50 transition-colors shadow-sm">Previous</button>
-          <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages || totalPages === 0} className="px-3 py-1.5 border border-gray-300 rounded bg-white text-sm disabled:opacity-50 font-medium hover:bg-gray-50 transition-colors shadow-sm">Next</button>
+        <div className="px-6 py-4 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 flex items-center justify-between">
+          <span className="text-xs text-zinc-500 dark:text-zinc-400 font-bold uppercase tracking-widest">Showing <span className="font-black text-zinc-900 dark:text-white">{indexOfFirstItem + 1}</span> - <span className="font-black text-zinc-900 dark:text-white">{Math.min(indexOfLastItem, questions.length)}</span></span>
+          <div className="flex gap-2">
+            <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="px-4 py-2 border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs disabled:opacity-50 font-black uppercase tracking-widest hover:border-red-500 hover:text-red-600 dark:hover:text-red-500 transition-all active:scale-95 text-zinc-700 dark:text-zinc-300">◀ Prev</button>
+            <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages || totalPages === 0} className="px-4 py-2 border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs disabled:opacity-50 font-black uppercase tracking-widest hover:border-red-500 hover:text-red-600 dark:hover:text-red-500 transition-all active:scale-95 text-zinc-700 dark:text-zinc-300">Next ▶</button>
+          </div>
         </div>
       </div>
 
       {isPanelOpen && selectedQ && (
-        <div className="border-t-2 border-purple-300 bg-purple-50/50 p-6 animate-fade-in-up">
-          <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex justify-between items-center mb-4 border-b border-gray-100 pb-3">
-              <h3 className="text-xl font-bold text-gray-800">Assign Reviewer</h3>
-              <button onClick={() => setIsPanelOpen(false)} className="text-gray-400 hover:text-gray-600 font-bold text-lg leading-none">✕</button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-zinc-900 shadow-2xl max-w-md w-full border-t-4 border-t-red-600 border border-zinc-200 dark:border-zinc-800">
+            <div className="px-6 py-5 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 flex justify-between items-center">
+              <h3 className="text-xl font-black uppercase italic tracking-tight text-zinc-900 dark:text-white">Assign Pit Crew</h3>
+              <button onClick={() => setIsPanelOpen(false)} className="text-zinc-500 hover:text-red-600 font-black text-lg">✕</button>
             </div>
             
-            <div className="bg-gray-50 p-4 rounded-md border border-gray-200 mb-6 space-y-3">
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-gray-500 font-semibold uppercase tracking-wide text-xs">Creator SME</span>
-                <span className="font-mono font-bold text-gray-800 bg-white px-2 py-0.5 rounded border border-gray-200">{selectedQ.creatorId}</span>
+            <div className="p-6">
+              <div className="bg-zinc-100 dark:bg-zinc-800 p-4 border border-zinc-200 dark:border-zinc-700 mb-6 space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-zinc-500 dark:text-zinc-400 font-black uppercase tracking-widest text-[10px]">Driver</span>
+                  <span className="font-mono font-bold text-zinc-800 dark:text-zinc-200 bg-white dark:bg-zinc-950 px-2 py-0.5 border border-zinc-200 dark:border-zinc-700 text-xs uppercase">{selectedQ.creatorId}</span>
+                </div>
+                <div className="flex justify-between items-center border-t border-zinc-200 dark:border-zinc-700 pt-3">
+                  <span className="text-zinc-500 dark:text-zinc-400 font-black uppercase tracking-widest text-[10px]">Chassis</span>
+                  <span className="font-black text-red-600 dark:text-red-500 uppercase tracking-wider text-xs">{selectedQ.stack}</span>
+                </div>
               </div>
-              <div className="flex justify-between items-center text-sm border-t border-gray-200 pt-3">
-                <span className="text-gray-500 font-semibold uppercase tracking-wide text-xs">Tech Stack</span>
-                <span className="font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-100">{selectedQ.stack}</span>
-              </div>
-              <div className="flex justify-between items-center text-sm border-t border-gray-200 pt-3">
-                <span className="text-gray-500 font-semibold uppercase tracking-wide text-xs">Topic</span>
-                <span className="font-bold text-gray-700">{selectedQ.topic}</span>
-              </div>
-            </div>
 
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Select Eligible Reviewer</label>
-            <select 
-              value={selectedReviewer} 
-              onChange={(e) => setSelectedReviewer(e.target.value)} 
-              className="w-full border border-gray-300 rounded-md p-3 mb-4 font-mono text-sm outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
-            >
-              <option value="" disabled>Select a mapped reviewer...</option>
-              {eligibleReviewers.map(sme => (
-                <option key={sme.id} value={sme.id}>{sme.id} ({sme.role})</option>
-              ))}
-            </select>
-            
-            <p className="text-[11px] text-gray-500 mb-6 leading-tight">
-              * Showing SMEs mapped to the <span className="font-bold">{selectedQ.stack}</span> skill set. The creator (<span className="font-mono">{selectedQ.creatorId}</span>) has been automatically excluded to prevent self-review.
-            </p>
+              <label className="block text-xs font-black text-zinc-800 dark:text-zinc-200 uppercase tracking-widest mb-2">Select Engineer</label>
+              <select value={selectedReviewer} onChange={(e) => setSelectedReviewer(e.target.value)} className="w-full border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 p-3.5 mb-4 font-mono text-sm font-bold text-zinc-800 dark:text-zinc-200 outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all cursor-pointer">
+                <option value="" disabled>Select engineer...</option>
+                {eligibleReviewers.map(sme => <option key={sme.id} value={sme.id}>{sme.id} ({sme.role})</option>)}
+              </select>
+              
+              <p className="text-[10px] text-zinc-500 dark:text-zinc-400 font-bold uppercase tracking-widest mb-8 leading-relaxed bg-zinc-50 dark:bg-zinc-950 p-3 border border-zinc-200 dark:border-zinc-800">
+                <span className="text-red-500 mr-1">⚡</span> Showing engineers tuned for <span className="text-zinc-800 dark:text-zinc-200">{selectedQ.stack}</span>. Driver excluded.
+              </p>
 
-            <div className="flex justify-end gap-3">
-              <button onClick={() => setIsPanelOpen(false)} className="px-5 py-2.5 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors font-medium">Cancel</button>
-              <button onClick={handleAssign} disabled={!selectedReviewer} className="px-5 py-2.5 bg-[#A855F7] text-white rounded-md font-bold disabled:opacity-50 hover:bg-purple-600 transition-colors shadow-sm">Confirm Assignment</button>
+              <div className="flex gap-3">
+                <button onClick={() => setIsPanelOpen(false)} className="flex-1 px-5 py-3 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-black uppercase tracking-widest transition-colors skew-x-[-5deg]"><span className="skew-x-[5deg]">Cancel</span></button>
+                <button onClick={handleAssign} disabled={!selectedReviewer} className="flex-1 px-5 py-3 bg-red-600 hover:bg-red-700 text-white font-black uppercase tracking-widest disabled:opacity-50 transition-all active:scale-95 skew-x-[-5deg]"><span className="skew-x-[5deg]">Confirm 📡</span></button>
+              </div>
             </div>
           </div>
         </div>

@@ -7,15 +7,12 @@ export default function MyQuestions() {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   
-  // Pagination & Filter State
   const [currentPage, setCurrentPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState('All'); 
   const itemsPerPage = 5;
 
-  // Filter Categories
   const filterOptions = ['All', 'Draft', 'Ready for Review', 'Under Review', 'Approved', 'Rejected'];
 
-  // Fetch real data from the central database on load
   useEffect(() => {
     const fetchData = async () => {
       const data = await quizService.getMyQuestions();
@@ -26,14 +23,21 @@ export default function MyQuestions() {
   }, []);
 
   const getBadge = (status) => {
-    const s = { 
-      'Draft': 'bg-gray-100 text-gray-700 border-gray-200', 
-      'Ready for Review': 'bg-blue-50 text-blue-700 border-blue-200', 
-      'Under Review': 'bg-amber-50 text-amber-700 border-amber-200', 
-      'Approved': 'bg-emerald-50 text-emerald-700 border-emerald-200', 
-      'Rejected': 'bg-red-50 text-red-700 border-red-200' 
-    }[status] || 'bg-gray-100 text-gray-700';
-    return <span className={`px-2.5 py-1 text-xs font-bold rounded-full border ${s}`}>{status}</span>;
+    const styles = { 
+      'Draft': 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border-zinc-300 dark:border-zinc-600', 
+      'Ready for Review': 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800', 
+      'Under Review': 'bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-800', 
+      'Approved': 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800', 
+      'Rejected': 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800' 
+    }[status] || 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300';
+    
+    const dotColor = { 'Draft': 'bg-zinc-400', 'Ready for Review': 'bg-blue-500', 'Under Review': 'bg-orange-500 animate-pulse', 'Approved': 'bg-emerald-500', 'Rejected': 'bg-red-600' }[status] || 'bg-zinc-400';
+
+    return (
+      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest border transition-colors ${styles}`}>
+        <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`}></span> {status}
+      </span>
+    );
   };
 
   const handleFilterChange = (filter) => {
@@ -41,94 +45,137 @@ export default function MyQuestions() {
     setCurrentPage(1); 
   };
 
-  const filteredQuestions = statusFilter === 'All' 
-    ? questions 
-    : questions.filter(q => q.status === statusFilter);
-
+  const filteredQuestions = statusFilter === 'All' ? questions : questions.filter(q => q.status === statusFilter);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentQuestions = filteredQuestions.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(filteredQuestions.length / itemsPerPage);
 
-  if (isLoading) return <div className="text-center p-10 font-bold text-gray-500">Loading your questions...</div>;
+  if (isLoading) return (
+    <div className="flex flex-col items-center justify-center h-64 space-y-4">
+      <div className="w-12 h-12 border-4 border-zinc-200 dark:border-zinc-800 border-t-red-600 dark:border-t-red-500 rounded-full animate-spin"></div>
+      <p className="font-black text-zinc-500 animate-pulse uppercase tracking-[0.2em] text-xs">Warming up tires... Fetching Data</p>
+    </div>
+  );
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-8 max-w-7xl mx-auto pb-10">
       
-      {/* Status Filter Tabs */}
-      <div className="flex flex-wrap gap-2 mb-2">
-        {filterOptions.map(option => (
-          <button
-            key={option}
-            onClick={() => handleFilterChange(option)}
-            className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors shadow-sm ${
-              statusFilter === option 
-                ? 'bg-[#A855F7] text-white border-transparent' 
-                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
-            }`}
-          >
-            {option} 
-            <span className={`ml-2 px-1.5 py-0.5 rounded-full text-xs ${statusFilter === option ? 'bg-purple-800 text-purple-100' : 'bg-gray-100 text-gray-500'}`}>
-              {option === 'All' ? questions.length : questions.filter(q => q.status === option).length}
-            </span>
-          </button>
-        ))}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-2">
+        <div>
+          <h2 className="text-3xl font-black text-zinc-900 dark:text-white tracking-tighter uppercase italic">My Telemetry <span className="text-red-600">Logs</span></h2>
+          <p className="text-zinc-500 dark:text-zinc-400 font-bold uppercase tracking-widest text-xs mt-1">Track and tune your technical questions.</p>
+        </div>
+        
+        <div className="flex gap-4 w-full md:w-auto">
+          <div className="flex-1 md:flex-none bg-white dark:bg-zinc-900 px-6 py-3 border border-zinc-200 dark:border-zinc-800 flex items-center gap-4 hover:border-emerald-500 transition-all">
+            <div className="text-2xl">🏆</div>
+            <div>
+              <p className="text-[10px] text-zinc-400 font-black uppercase tracking-widest mb-0.5">Approved</p>
+              <p className="text-xl font-black text-zinc-900 dark:text-white leading-none">{questions.filter(q => q.status === 'Approved').length}</p>
+            </div>
+          </div>
+          <div className="flex-1 md:flex-none bg-white dark:bg-zinc-900 px-6 py-3 border border-zinc-200 dark:border-zinc-800 flex items-center gap-4 hover:border-orange-500 transition-all">
+            <div className="text-2xl">⏱️</div>
+            <div>
+              <p className="text-[10px] text-zinc-400 font-black uppercase tracking-widest mb-0.5">Pending</p>
+              <p className="text-xl font-black text-zinc-900 dark:text-white leading-none">{questions.filter(q => q.status === 'Under Review' || q.status === 'Ready for Review').length}</p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col">
+      <div className="bg-zinc-100 dark:bg-zinc-900 p-1 border border-zinc-200 dark:border-zinc-800 inline-flex flex-wrap gap-1 w-full sm:w-auto">
+        {filterOptions.map(option => {
+          const count = option === 'All' ? questions.length : questions.filter(q => q.status === option).length;
+          const isActive = statusFilter === option;
+          return (
+            <button
+              key={option}
+              onClick={() => handleFilterChange(option)}
+              className={`flex-1 sm:flex-none px-6 py-2.5 text-xs font-black uppercase tracking-widest transition-all duration-200 flex items-center justify-center gap-2 ${
+                isActive 
+                  ? 'bg-red-600 text-white shadow-md' 
+                  : 'bg-transparent text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-white'
+              }`}
+            >
+              {option} 
+              <span className={`px-2 py-0.5 text-[10px] ${isActive ? 'bg-black/20 text-white' : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400'}`}>
+                {count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="bg-white dark:bg-zinc-900 shadow-xl border border-zinc-200 dark:border-zinc-800 flex flex-col transition-all">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse min-w-[800px]">
+          <table className="w-full text-left border-collapse min-w-[900px]">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-200 text-xs uppercase tracking-wider text-gray-500">
-                <th className="px-6 py-4 font-semibold">Question Stem</th>
-                <th className="px-6 py-4 font-semibold">Stack</th>
-                <th className="px-6 py-4 font-semibold">Topic</th>
-                <th className="px-6 py-4 font-semibold">Difficulty</th>
-                <th className="px-6 py-4 font-semibold">Status</th>
-                <th className="px-6 py-4 font-semibold text-right">Actions</th>
+              <tr className="bg-zinc-50 dark:bg-zinc-950 border-b-2 border-zinc-200 dark:border-zinc-800 text-[10px] uppercase tracking-[0.15em] text-zinc-500 dark:text-zinc-400 font-black">
+                <th className="px-6 py-5">Specs / Details</th>
+                <th className="px-6 py-5">Chassis (Stack)</th>
+                <th className="px-6 py-5">Aero (Topic)</th>
+                <th className="px-6 py-5">Difficulty</th>
+                <th className="px-6 py-5">Telemetry Status</th>
+                <th className="px-6 py-5 text-right">Pit Stop Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/50">
               {currentQuestions.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="px-6 py-12 text-center text-gray-500 font-medium">
-                    <div className="text-3xl mb-2">📝</div>
-                    No questions found for status "{statusFilter}".
+                  <td colSpan="6" className="px-6 py-20 text-center">
+                    <div className="w-24 h-24 mx-auto bg-zinc-50 dark:bg-zinc-800/50 flex items-center justify-center mb-4 border border-zinc-200 dark:border-zinc-700">
+                      <span className="text-4xl opacity-50">🏁</span>
+                    </div>
+                    <h3 className="text-xl font-black text-zinc-800 dark:text-zinc-200 uppercase italic">No Data Found</h3>
+                    <p className="text-zinc-500 dark:text-zinc-400 mt-2 font-bold uppercase tracking-widest text-xs">Run some laps or add a new question.</p>
                   </td>
                 </tr>
               ) : (
                 currentQuestions.map((q) => (
-                  <tr key={q.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900 truncate max-w-[250px]">{q.stem || q.questionStem}</td>
-                    <td className="px-6 py-4 text-sm">
-                      <span className="px-2 py-1 bg-purple-50 text-purple-700 rounded text-xs border border-purple-100 font-medium">
-                        {q.stack || q.technologyStack}
+                  <tr key={q.id} className="hover:bg-zinc-50/80 dark:hover:bg-zinc-800/50 transition-colors duration-200 group">
+                    <td className="px-6 py-5 max-w-xs">
+                      <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100 line-clamp-2 leading-relaxed pr-4">{q.stem || q.questionStem}</p>
+                      <p className="text-[10px] text-zinc-500 font-mono mt-2 bg-zinc-100 dark:bg-zinc-800 inline-block px-2 py-0.5 border border-zinc-200 dark:border-zinc-700 font-bold uppercase tracking-widest">ID: {q.id}</p>
+                    </td>
+                    <td className="px-6 py-5">
+                      <span className="px-3 py-1 bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 text-xs font-black border border-zinc-200 dark:border-zinc-700 whitespace-nowrap uppercase tracking-wider">
+                        {q.stack || q.technologyStack || 'N/A'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600 font-medium">{q.topic || 'General'}</td>
-                    <td className="px-6 py-4 text-sm text-gray-600">{q.difficulty || 'Medium'}</td>
-                    
-                    {/* STATUS COLUMN WITH ASSIGNMENT CONTEXT */}
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex flex-col items-start gap-1">
+                    <td className="px-6 py-5">
+                      <span className="text-xs text-zinc-600 dark:text-zinc-400 font-bold uppercase tracking-wider line-clamp-2">
+                        {q.topic || 'General'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-5">
+                      <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 border ${
+                        q.difficulty === 'Hard' ? 'text-red-600 bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800' : 
+                        q.difficulty === 'Medium' ? 'text-orange-600 bg-orange-50 border-orange-200 dark:bg-orange-900/20 dark:border-orange-800' : 
+                        'text-emerald-600 bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800'}`}>
+                        {q.difficulty || 'Medium'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-5 whitespace-nowrap">
+                      <div className="flex flex-col items-start gap-2">
                         {getBadge(q.status)}
-                        {/* Only show the reviewer ID if someone is actively assigned to it */}
                         {q.reviewerId && (q.status === 'Under Review' || q.status === 'Approved' || q.status === 'Rejected') && (
-                          <span className="text-[10px] text-gray-400 font-mono tracking-tight ml-1">
-                            by {q.reviewerId}
+                          <span className="text-[9px] text-zinc-500 dark:text-zinc-400 font-black uppercase tracking-widest flex items-center gap-1.5 bg-zinc-50 dark:bg-zinc-800 px-2 py-1 border border-zinc-200 dark:border-zinc-700">
+                            <span className="text-red-500">🏎️</span> {q.reviewerId}
                           </span>
                         )}
                       </div>
                     </td>
                     
-                    <td className="px-6 py-4 text-right">
-                      {/* Only Drafts and Rejected questions can be edited by the SME */}
-                      {(q.status === 'Draft' || q.status === 'Rejected') && (
-                        <button 
-                          onClick={() => navigate(`/edit-question/${q.id}`)} 
-                          className="text-sm px-4 py-1.5 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100 font-medium transition-colors shadow-sm"
-                        >
-                          Edit
+                    <td className="px-6 py-5 text-right">
+                      {(q.status === 'Draft' || q.status === 'Rejected') ? (
+                        <button onClick={() => navigate(`/edit-question/${q.id}`)} className="text-xs px-5 py-2.5 border border-zinc-300 dark:border-zinc-600 text-zinc-800 dark:text-zinc-200 bg-white dark:bg-zinc-800 hover:border-red-500 hover:text-red-600 dark:hover:text-red-400 font-black uppercase tracking-widest transition-all duration-200 active:scale-95 flex items-center justify-center gap-2 ml-auto skew-x-[-5deg]">
+                          <span className="skew-x-[5deg]">Tune 🛠️</span>
+                        </button>
+                      ) : (
+                        <button disabled className="text-xs px-5 py-2.5 border border-zinc-200 dark:border-zinc-800 text-zinc-400 dark:text-zinc-600 bg-zinc-50 dark:bg-zinc-900/50 font-black uppercase tracking-widest cursor-not-allowed flex items-center justify-center gap-2 ml-auto skew-x-[-5deg]">
+                          <span className="skew-x-[5deg]">Locked 🔒</span>
                         </button>
                       )}
                     </td>
@@ -139,31 +186,18 @@ export default function MyQuestions() {
           </table>
         </div>
         
-        {/* Pagination Footer */}
-        <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex items-center justify-between">
-          <span className="text-sm text-gray-500">
+        <div className="px-6 py-4 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <span className="text-xs text-zinc-500 dark:text-zinc-400 font-bold uppercase tracking-widest">
             {filteredQuestions.length > 0 ? (
-              <>
-                Showing <span className="font-medium">{indexOfFirstItem + 1}</span> to <span className="font-medium">{Math.min(indexOfLastItem, filteredQuestions.length)}</span> of <span className="font-medium">{filteredQuestions.length}</span>
-              </>
-            ) : (
-              'Showing 0 results'
-            )}
+              <>Showing <span className="font-black text-zinc-900 dark:text-white">{indexOfFirstItem + 1}</span> - <span className="font-black text-zinc-900 dark:text-white">{Math.min(indexOfLastItem, filteredQuestions.length)}</span> of <span className="font-black text-zinc-900 dark:text-white">{filteredQuestions.length}</span> Logs</>
+            ) : '0 Logs'}
           </span>
           <div className="flex gap-2">
-            <button 
-              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} 
-              disabled={currentPage === 1} 
-              className="px-3 py-1.5 border border-gray-300 rounded bg-white text-sm disabled:opacity-50 font-medium hover:bg-gray-50 transition-colors shadow-sm"
-            >
-              Previous
+            <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="px-4 py-2 border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs disabled:opacity-50 font-black uppercase tracking-widest hover:border-red-500 hover:text-red-600 dark:hover:text-red-500 transition-all active:scale-95 text-zinc-700 dark:text-zinc-300">
+              ◀ Prev
             </button>
-            <button 
-              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} 
-              disabled={currentPage === totalPages || totalPages === 0} 
-              className="px-3 py-1.5 border border-gray-300 rounded bg-white text-sm disabled:opacity-50 font-medium hover:bg-gray-50 transition-colors shadow-sm"
-            >
-              Next
+            <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages || totalPages === 0} className="px-4 py-2 border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs disabled:opacity-50 font-black uppercase tracking-widest hover:border-red-500 hover:text-red-600 dark:hover:text-red-500 transition-all active:scale-95 text-zinc-700 dark:text-zinc-300">
+              Next ▶
             </button>
           </div>
         </div>

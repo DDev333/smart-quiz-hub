@@ -1,9 +1,47 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-/* Quick fix to ensure full height */
-html, body, #root {
-  height: 100%;
-  margin: 0;
+@custom-variant dark (&:is(.dark *));
+
+@layer base {
+  html, body, #root {
+    height: 100%;
+    margin: 0;
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: #FAFAFA; /* Zinc 50 */
+  }
+  
+  html.dark body {
+    background-color: #09090B; /* Deep Carbon / Zinc 950 */
+    color: #FAFAFA;
+  }
+
+  /* Racing Red Selection */
+  ::selection {
+    background-color: #DC2626; 
+    color: #ffffff;
+  }
+  ::-moz-selection {
+    background-color: #DC2626;
+    color: #ffffff;
+  }
+}
+
+/* Mechanical Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background-color: #52525B; /* Zinc 600 */
+  border-radius: 0px; /* Sharper edges for F1 feel */
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: #DC2626; /* Red on hover */
 }
